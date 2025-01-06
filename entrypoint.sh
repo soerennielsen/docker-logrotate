@@ -28,8 +28,13 @@ else
 fi
 ts "${TS_FORMAT}" < "$HOME/logrotate.conf"
 
-# Setup crontab
-echo "${LOGROTATE_CRON:-*/15 * * * *} /usr/sbin/logrotate -v -s $HOME/logrotate.status $HOME/logrotate.conf" > /var/spool/cron/crontabs/logrotate
+# Setup crontab for Supercronic
+echo "${LOGROTATE_CRON:-*/15 * * * *} /usr/sbin/logrotate -v -s $HOME/logrotate.status $HOME/logrotate.conf" > "$HOME/cron/logrotate.cron"
 
-# Start crond with default crontab directory
-exec crond -d "${CROND_LOGLEVEL:-7}" -f 2>&1 | ts "${TS_FORMAT}"
+# Start Supercronic
+echo "starting supercronic" | ts "${TS_FORMAT}"
+if [ "${DEBUG:-false}" = "true" ]; then
+  exec supercronic -debug "$HOME/cron/logrotate.cron" 2>&1 | ts "${TS_FORMAT}"  
+else
+  exec supercronic "$HOME/cron/logrotate.cron" 2>&1 | ts "${TS_FORMAT}"
+fi

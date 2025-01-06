@@ -7,6 +7,8 @@ This is a docker container based on Alpine Linux with `logrotate`, specifically 
 - High security environments
 - Flexible log rotation with both time and size-based triggers
 
+Uses [Supercronic](https://github.com/aptible/supercronic) for reliable non-root cron execution.
+
 The container runs with user "logrotate" (UID 1000). You can set the GID to match your log file permissions if needed.
  
 ## Configuration
