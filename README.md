@@ -18,8 +18,6 @@ configure some logrotation features with the following environment variables:
 
 - `LOGROTATE_FILE_PATTERN` (default: `*.log`): File pattern within the `/logs` directory for logs
   to be rotated by `logrotate`
-- `LOGROTATE_TRUNCATE` (default: `copytruncate`): Truncation behaviour of logrotate, use either
-  `copytruncate` or `nocopytruncate`
 - `LOGROTATE_COMPRESS` (default: `nocompress`): Compression behaviour for rotated files, use
   either `nocompress` or `compress`
 - `LOGROTATE_ROTATE` (default: `7`): The `rotate` option of logrotate
@@ -39,9 +37,27 @@ the environment variable `LOGROTATE_CRON`. Use one of Alpine Linux' predefined p
 `5 4 * * *` (at 04:05 every day). If you are unsure about the cron schedule expression syntax,
 consult a tool like [crontab guru](https://crontab.guru/).
 
+## Notes
+
+Running as non-root gives many "fun" scenarios. 
+
+Set your GID to match the group of the log files you want to rotate, i.e. 
+```yaml
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 65532
+```
+
+In many cases "copytruncate" will fail in this scenario, so don't use that. 
+
+Set the DEBUG flag to see what is happening and try to shell into the container and execute: 
+```sh
+/usr/sbin/logrotate -v -s $HOME/logrotate.status $HOME/logrotate.conf"
+```
+
 ## Examples
 
-```bash
+```sh
 # Example 1: Size-based rotation with numeric suffixes
 docker run \
   -v /path/to/my/logs:/logs \
@@ -69,7 +85,7 @@ but works in a non-root environment.
 ## Usage
 
 For Docker:
-```bash
+```sh
 docker run ghcr.io/soerennielsen/logrotate
 ```
 
