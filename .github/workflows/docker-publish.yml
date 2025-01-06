@@ -1,16 +1,9 @@
 name: Docker
 
 on:
-  push:
-    # Publish `master` as Docker `latest` image.
-    branches:
-      - master
+  workflow_dispatch:
 
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
-
-  # Run tests for any PRs.
+  # Run publish for any PRs to the main branch.
   pull_request:
 
 env:
