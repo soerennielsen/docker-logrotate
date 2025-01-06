@@ -1,11 +1,13 @@
 #!/bin/sh
-set -ex
+if [ "${DEBUG:-false}" = "true" ]; then
+  set -ex
+fi
 
 TS_FORMAT="%Y-%m-%dT%H:%M:%S%z "
 
-if [ -e /etc/logrotate.conf ]; then
+if [ -f /etc/logrotate.conf ]; then
   echo "Using mounted /etc/logrotate.conf:" | ts "${TS_FORMAT}"
-  cp /etc/logrotate.conf "$HOME/logrotate.conf"
+  cp -f /etc/logrotate.conf "$HOME/logrotate.conf"
 else
   echo "Using templated /etc/logrotate.conf:" | ts "${TS_FORMAT}"
   {
@@ -14,7 +16,6 @@ else
     echo "  ${LOGROTATE_COMPRESS:-nocompress}"
     echo "  rotate ${LOGROTATE_ROTATE:-7}"
     echo "  size ${LOGROTATE_SIZE:-50M}"
-    echo "  copytruncate"
     echo "  missingok"
     echo "  notifempty"
     if [ "${LOGROTATE_DAILY:-true}" = "true" ]; then

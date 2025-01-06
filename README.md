@@ -1,11 +1,13 @@
 
 # logrotate
 
-This is a docker container based on Alpine Linux with `logrotate`.
+This is a docker container based on Alpine Linux with `logrotate`, specifically designed for:
+- Non-root execution (runs as UID 1000 "logrotate" user)
+- Kubernetes sidecar deployments
+- High security environments
+- Flexible log rotation with both time and size-based triggers
 
-It is specifically designed for high secure environment and non-root execution and to be used in Kubernetes environments where you want to run a sidecar
-
-It uses UID 1000 for a "logrotate" user. You can set GID to whatever your log file permissions are set to if needed.
+The container runs with user "logrotate" (UID 1000). You can set the GID to match your log file permissions if needed.
  
 ## Configuration
 
@@ -20,6 +22,7 @@ configure some logrotation features with the following environment variables:
   either `nocompress` or `compress`
 - `LOGROTATE_ROTATE` (default: `7`): The `rotate` option of logrotate
 - `LOGROTATE_SIZE` (default `50M`): the `size` option of logrotate
+- `DEBUG` (default `false`): enables debug output with command tracing
 - `LOGROTATE_DAILY` (default `true`): enables daily rotation with date-based suffixes. When enabled,
   rotated files are named with date and time (e.g., `app.log-2025-01-06-1045`). When set to `false`,
   only size-based rotation is used with numeric suffixes (e.g., `app.log.1`)
@@ -43,7 +46,7 @@ docker run \
   -e LOGROTATE_FILE_PATTERN="*.log" \
   -e LOGROTATE_DAILY="false" \
   -e LOGROTATE_SIZE="100M" \
-  linkyard:logrotate
+  ghcr.io/soerennielsen/logrotate
 
 # Example 2: Daily rotation with size check
 docker run \
@@ -53,7 +56,7 @@ docker run \
   -e LOGROTATE_ROTATE="0" \
   # run logrotate every 5 minutes
   -e LOGROTATE_CRON="*/5 0 0 0 0" \
-  linkyard:logrotate
+  ghcr.io/soerennielsen/logrotate
 ```
 
 ## Attribution
@@ -61,6 +64,51 @@ docker run \
 This image is similar to [linkyard/logrotate](https://github.com/linkyard/docker-logrotate)
 but works in a non-root environment.
 
+## Usage
 
-# Usage
-`docker run ghcr.io/soerennielsen/logrotate`
+For Docker:
+```bash
+docker run ghcr.io/soerennielsen/logrotate
+```
+
+For Kubernetes, add as a sidecar container:
+```yaml
+traefik:
+  deployment:
+    replicas: 5
+    podAnnotations:
+      co.elastic.hints/package: traefik
+      co.elastic.hints/host: traefik-metrics.traefik:9100
+
+    additionalContainers:
+      - name: logrotate
+        image: ghcr.io/soerennielsen/logrotate:latest
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 65532
+        volumeMounts:
+          - name: data
+            mountPath: /logs
+            readOnly: false
+          - name: logrotate-config
+            mountPath: /etc/logrotate.conf
+            subPath: traefik-logrotate.conf
+
+      - name: logtail
+        image: busybox
+        args: [/bin/sh, -c, "tail -F /logs/traefik.log"]
+        volumeMounts:
+          - name: data
+            mountPath: /logs
+            readOnly: true
+
+    additionalVolumes:
+      - name: logrotate-config
+        configMap:
+          name: traefik-logrotate-config
+      - name: data
+        ...
+
+```
+
+Note: Here I use a config map to provide a custom logrotate configuration. You can also just use the env variables.
