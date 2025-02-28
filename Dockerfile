@@ -1,13 +1,16 @@
-FROM alpine:3.21
+FROM alpine:3.21.3
 
 # Supercronic for non-root cron jobs
-ARG SUPERCRONIC_VERSION=v0.2.29
+ARG SUPERCRONIC_VERSION=v0.2.33
+ARG USER_UID=65532
+ARG USER_GID=65532
 
 RUN set -x \
   && apk add --no-cache logrotate tini tzdata moreutils curl \
   && rm /etc/logrotate.conf && rm -r /etc/logrotate.d \
   && mv /etc/periodic/daily/logrotate /etc/.logrotate.cronjob \
-  && adduser -D -u 1000 logrotate \
+  && addgroup -g ${USER_GID} logrotate \
+  && adduser -D -u ${USER_UID} -G logrotate logrotate \
   # Install Supercronic
   && ARCH=$(uname -m) \
   && if [ "$ARCH" = "x86_64" ]; then \

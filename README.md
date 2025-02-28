@@ -44,9 +44,11 @@ Running as non-root gives many "fun" scenarios.
 Set your GID to match the group of the log files you want to rotate, i.e. 
 ```yaml
   securityContext:
-    runAsUser: 1000
+    runAsUser: 65532 
     runAsGroup: 65532
 ```
+
+Note: These numbers should match the docker build, where you can use the args USER_UID (=65532) and USER_GID (=65532) to match your usecase. Default is suitable for Traefik logs.
 
 In many cases "copytruncate" will fail in this scenario, so don't use that. 
 
@@ -102,7 +104,7 @@ traefik:
       - name: logrotate
         image: ghcr.io/soerennielsen/logrotate:latest
         securityContext:
-          runAsUser: 1000
+          runAsUser: 65532
           runAsGroup: 65532
         volumeMounts:
           - name: data
@@ -124,7 +126,6 @@ traefik:
       - name: logrotate-config
         configMap:
           name: traefik-logrotate-config
-      - name: data
         ...
 
 ```
